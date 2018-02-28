@@ -53,13 +53,19 @@ func (api objectAPIHandlers) GetBucketNotificationHandler(w http.ResponseWriter,
 		writeErrorResponse(w, ErrNotImplemented, r.URL)
 		return
 	}
-	if s3Error := checkRequestAuthType(r, "", "", globalServerConfig.GetRegion()); s3Error != ErrNone {
+	cred, s3Error := checkRequestAuthType(r, "", "", globalServerConfig.GetRegion())
+	if s3Error != ErrNone {
 		writeErrorResponse(w, s3Error, r.URL)
 		return
 	}
 
 	vars := mux.Vars(r)
 	bucketName := vars["bucket"]
+
+	if restrictedBkt := cred.Bucket(); restrictedBkt != "" && restrictedBkt != bucketName {
+		writeErrorResponse(w, ErrAccessDenied, r.URL)
+		return
+	}
 
 	_, err := objAPI.GetBucketInfo(ctx, bucketName)
 	if err != nil {
@@ -106,13 +112,19 @@ func (api objectAPIHandlers) PutBucketNotificationHandler(w http.ResponseWriter,
 		writeErrorResponse(w, ErrNotImplemented, r.URL)
 		return
 	}
-	if s3Error := checkRequestAuthType(r, "", "", globalServerConfig.GetRegion()); s3Error != ErrNone {
+	cred, s3Error := checkRequestAuthType(r, "", "", globalServerConfig.GetRegion())
+	if s3Error != ErrNone {
 		writeErrorResponse(w, s3Error, r.URL)
 		return
 	}
 
 	vars := mux.Vars(r)
 	bucketName := vars["bucket"]
+
+	if restrictedBkt := cred.Bucket(); restrictedBkt != "" && cred.Scope[1:] == restrictedBkt && restrictedBkt != bucketName {
+		writeErrorResponse(w, ErrAccessDenied, r.URL)
+		return
+	}
 
 	_, err := objectAPI.GetBucketInfo(ctx, bucketName)
 	if err != nil {
@@ -167,13 +179,19 @@ func (api objectAPIHandlers) ListenBucketNotificationHandler(w http.ResponseWrit
 		writeErrorResponse(w, ErrNotImplemented, r.URL)
 		return
 	}
-	if s3Error := checkRequestAuthType(r, "", "", globalServerConfig.GetRegion()); s3Error != ErrNone {
+	cred, s3Error := checkRequestAuthType(r, "", "", globalServerConfig.GetRegion())
+	if s3Error != ErrNone {
 		writeErrorResponse(w, s3Error, r.URL)
 		return
 	}
 
 	vars := mux.Vars(r)
 	bucketName := vars["bucket"]
+
+	if restrictedBkt := cred.Bucket(); restrictedBkt != "" && restrictedBkt != bucketName {
+		writeErrorResponse(w, ErrAccessDenied, r.URL)
+		return
+	}
 
 	values := r.URL.Query()
 
